@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<link rel="stylesheet" href="styles.css">
+<html>
+
+<head>
+    <title>Lectura...</title>
+    <!-- Agregar enlaces a los archivos CSS de Bootstrap -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Agregar enlace al archivo CSS de Chart.js -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.css">
+</head>
+
+<body>
+    <div class="menu-rapido">
+        <ul>
+            <li><a href="index.php">Registrar pozo</a></li>
+            <li><a href="lector_json.html">Medidor de PSI</a></li>
+        </ul>
+    </div>
+
+    <div class="container">
+
+        <br>
+        <h2>Tabla de Registros</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Ubicacion</th>
+                    <th>Nombre</th>
+                    <th>Tipo</th>
+                    <th>PSI</th>
+                    <th>Fecha de Creacion</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-registros">
+                <!-- Aquí se mostrarán los registros -->
+            </tbody>
+        </table>
+
+        <br>
+        <h2>Grafico de PSI entre fechas</h2>
+        <div>
+            <label for="fecha-inicio">Fecha de inicio:</label>
+            <input type="date" id="fecha-inicio">
+
+            <label for="fecha-fin">Fecha de fin:</label>
+            <input type="date" id="fecha-fin">
+
+            <button onclick="generarGrafico()">Generar Grafico</button>
+        </div>
+        <canvas id="grafico-psi"></canvas>
+
+    </div>
+
+    <!-- Agregar enlaces a los archivos JS de Bootstrap y Chart.js, y el script personalizado -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+    <script>
+        // Leer el archivo JSON
+        fetch('registros.json')
+            .then(response => response.json())
+            .then(data => {
+                const tablaRegistros = document.getElementById('tabla-registros');
+
+                // Generar las filas de la tabla con los registros
+                data.forEach(registro => {
+                    const fila = document.createElement('tr');
+                    fila.innerHTML = `
+                        <td>${registro.ubicacion}</td>
+                        <td>${registro.nombre}</td>
+                        <td>${registro.tipo}</td>
+                        <td>${registro.psi}</td>
+                        <td>${registro.fecha}</td>
+                    `;
+                    tablaRegistros.appendChild(fila);
+                });
+            });
+
+        // Generar el gráfico de PSI entre las fechas seleccionadas
+        function generarGrafico() {
+            const fechaInicio = document.getElementById('fecha-inicio').value;
+            const fechaFin = document.getElementById('fecha-fin').value;
+
+            fetch('registros.json')
+                .then(response => response.json())
+                .then(data => {
+                    const registrosFiltrados = data.filter(registro => {
+                        const fechaRegistro = new Date(registro.fecha);
+                        return fechaRegistro >= new Date(fechaInicio) && fechaRegistro <= new Date(fechaFin);
+                    });
+
+                    const psiData = registrosFiltrados.map(registro => registro.psi);
+                    const fechasData = registrosFiltrados.map(registro => registro.fecha);
+
+                    const ctx = document.getElementById('grafico-psi').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: fechasData,
+                            datasets: [{
+                                label: 'PSI',
+                                data: psiData,
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false
+                        }
+                    });
+                });
+        }
+    </script>
+</body>
+
+</html>
